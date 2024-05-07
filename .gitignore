@@ -1,0 +1,9 @@
+**/*.pyc
+.coverage
+htmlcov
+**/.DS_Store
+venv
+.env
+*/.venv/*
+.idea
+.pytest_cache
