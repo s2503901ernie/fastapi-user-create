@@ -13,3 +13,14 @@ class UserCreate(BaseModel):
 class UserVerify(BaseModel):
     username: str
     password: str
+
+
+class UserActionMessage(BaseModel):
+    success: bool
+    reason: str
+
+    def as_dict(self) -> dict:
+        return {
+            'success': self.success,
+            'reason': self.reason,
+        }
