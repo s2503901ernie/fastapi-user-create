@@ -1,15 +1,20 @@
+from datetime import datetime
 import os
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../", "src")))
 
 from sqlalchemy.exc import IntegrityError
 from unittest.mock import Mock
+from unittest.mock import patch
 from models.user import UserActionMessage
 from app.user import create_user
 from app.user import PasswordValidator
 from app.user import UserNameValidator
+from app.user import UserVerificationService
 from settings import PASSWORD_MAX_LENGTH
 from settings import PASSWORD_MIN_LENGTH
+from settings import USER_PENALTY_NUMBER
+from settings import USER_PENALTY_PERIOD
 from settings import USERNAME_MAX_LENGTH
 from settings import USERNAME_MIN_LENGTH
 
@@ -79,6 +84,40 @@ def test_PasswordValidator():
     success, msg = validator.validate()
     assert success is False
     assert msg == 'The number is missing, should be at least one.'
+
+
+def test_UserVerificationService():
+    session_mock = Mock()
+
+    # Test case 1: Valid verification and no retry
+    session_mock.return_value = 'test_user'
+    svc = UserVerificationService('test_user', 'Abc12345678', session_mock)
+    success, msg = svc.verify()
+    assert success is True
+    assert msg == ''
+
+    # Test case 2: User does not exist
+    with patch('app.user.get_db_user', return_value=None):
+        svc = UserVerificationService('test_user', 'Abc12345678', session_mock)
+        success, msg = svc.verify()
+        assert success is False
+        assert msg == f'The username: test_user does not exist!'
+
+    # Test case 3: Over tries
+    with patch.dict('app.user.user_verify_cache', {'test_user': [5, datetime.now()]}):
+        svc = UserVerificationService('test_user', 'Abc12345678', session_mock)
+        success, msg = svc.verify()
+        assert success is False
+        assert msg == 'Please try later.'
+
+    # Test case 4: The fifth try
+    with patch.dict('app.user.user_verify_cache', {'test_user': [4, None]}):
+        with patch('app.user.get_db_user', return_value=None):
+            svc = UserVerificationService('test_user', 'Abc12345678', session_mock)
+            success, msg = svc._check_user_password()
+            assert success is False
+            assert msg == (f'You have entered wrong password for over {USER_PENALTY_NUMBER} time. '
+                           f'Please retry after {USER_PENALTY_PERIOD} seconds.')
 
 
 def test_create_user():
