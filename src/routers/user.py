@@ -32,14 +32,26 @@ def create_user(user: UserCreate, session: Session = Depends(get_db)) -> JSONRes
     username = user.username
     password = user.password
     result = user_app.create_user(username=username, password=password, session=session)
+    status_code = 201
     if result.reason.startswith('The username'):
-        return JSONResponse(status_code=409, content=result.as_dict())
-    if result.reason.startswith('The length'):
-        return JSONResponse(status_code=400, content=result.as_dict())
-
-    return JSONResponse(status_code=201, content=result.as_dict())
+        status_code = 409
+    elif result.reason.startswith('The length'):
+        status_code = 400
+    return JSONResponse(status_code=status_code, content=result.as_dict())
 
 
 @router.post('/verify_user/')
-def verify_user(user: UserVerify) -> User:
-    return user_app.verify_user(username='hello user', password='123')
+def verify_user(user: UserVerify, session: Session = Depends(get_db)) -> JSONResponse:
+    username = user.username
+    password = user.password
+    result = user_app.verify_user(username=username, password=password, session=session)
+    status_code = 200
+    if result.reason.startswith('The username'):
+        status_code = 404
+    elif result.reason.startswith('The password'):
+        status_code = 401
+    elif result.reason.startswith('Please try'):
+        status_code = 429
+    elif result.reason.startswith('You have entered'):
+        status_code = 429
+    return JSONResponse(status_code=status_code, content=result.as_dict())
