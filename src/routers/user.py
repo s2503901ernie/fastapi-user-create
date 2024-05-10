@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 
 from app import user as user_app
 from db.utils import get_db
-from models.user import User
 from models.user import UserActionMessage
 from models.user import UserCreate
 from models.user import UserVerify
@@ -18,7 +17,7 @@ router = APIRouter(prefix='/users', )
 def create_user(user: UserCreate, session: Session = Depends(get_db)) -> JSONResponse:
     """Create a new user.
 
-    Endpoint: /users
+    Endpoint: /create_user
     Example: {
         username: Jason,
         password: Jason1234,
@@ -42,6 +41,20 @@ def create_user(user: UserCreate, session: Session = Depends(get_db)) -> JSONRes
 
 @router.post('/verify_user/')
 def verify_user(user: UserVerify, session: Session = Depends(get_db)) -> JSONResponse:
+    """Verify a user
+
+    Endpoint: /verify_user
+    Example: {
+        username: Jason,
+        password: Jason1234,
+    }
+
+    Response:
+        200: Successfully verified
+        401: The password is not correct
+        404: The username does not exist
+        429: User is not allowed for the verification within a period
+    """
     username = user.username
     password = user.password
     result = user_app.verify_user(username=username, password=password, session=session)
