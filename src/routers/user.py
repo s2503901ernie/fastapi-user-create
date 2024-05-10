@@ -17,7 +17,7 @@ router = APIRouter(prefix='/users', )
 def create_user(user: UserCreate, session: Session = Depends(get_db)) -> JSONResponse:
     """Create a new user.
 
-    Endpoint: /create_user
+    Endpoint: /users/create_user
     Example: {
         username: Jason,
         password: Jason1234,
@@ -43,7 +43,7 @@ def create_user(user: UserCreate, session: Session = Depends(get_db)) -> JSONRes
 def verify_user(user: UserVerify, session: Session = Depends(get_db)) -> JSONResponse:
     """Verify a user
 
-    Endpoint: /verify_user
+    Endpoint: /users/verify_user
     Example: {
         username: Jason,
         password: Jason1234,
